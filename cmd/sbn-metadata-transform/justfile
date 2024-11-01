@@ -1,0 +1,18 @@
+default:
+    just -l
+
+clean:
+    rm sbn.jsonl
+    rm sbn.duckdb
+
+to-jsonl:
+    go run . > sbn.jsonl 
+
+load-ddb:
+    duckdb sbn.duckdb "create table digital as select * from read_json_auto('sbn.jsonl');"
+
+
+all: clean to-jsonl load-ddb
+
+list-links:
+     duckdb --list sbn.duckdb "SELECT DISTINCT unnest(link) AS unique_links FROM digital;" 
