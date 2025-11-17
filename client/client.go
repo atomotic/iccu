@@ -2,28 +2,37 @@ package client
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-var client *http.Client
-var tokenURL = "https://api.iccu.sbn.it/oauth2/token"
+const tokenURL = "https://api.iccu.sbn.it/oauth2/token"
 
-func New(key, secret string) {
+// Client wraps the authenticated HTTP client for ICCU API
+type Client struct {
+	http *http.Client
+}
+
+// New creates a new authenticated client with the provided credentials
+func New(ctx context.Context, key, secret string) (*Client, error) {
+	if key == "" || secret == "" {
+		return nil, errors.New("client ID and secret are required")
+	}
+
 	config := clientcredentials.Config{
 		ClientID:     key,
 		ClientSecret: secret,
 		TokenURL:     tokenURL,
 	}
 
-	ctx := context.Background()
-	client = config.Client(ctx)
+	return &Client{
+		http: config.Client(ctx),
+	}, nil
 }
 
-func GetClient() *http.Client {
-	if client == nil {
-		panic("Client not initialized. Call client.New() first.")
-	}
-	return client
+// HTTP returns the underlying HTTP client for making authenticated requests
+func (c *Client) HTTP() *http.Client {
+	return c.http
 }
